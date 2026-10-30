@@ -8,11 +8,9 @@ import time
 
 st.title("URL更新チェック")
 
-#  セッション
 if "run" not in st.session_state:
     st.session_state.run = False
 
-#  KW入力
 col1, col2 = st.columns(2)
 
 with col1:
@@ -24,20 +22,16 @@ with col2:
 uploaded_file = st.file_uploader("Excelアップロード", type=["xlsx"])
 st.caption("G列にURL / B列に結果を書き込みします")
 
-#  ボタン（★修正版）
 if st.button("チェック開始"):
     st.session_state.run = True
 
-#  色設定
 pink_fill = PatternFill(start_color="FFC0CB", end_color="FFC0CB", fill_type="solid")
 blue_fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")
 green_fill = PatternFill(start_color="90EE90", end_color="90EE90", fill_type="solid")
 
-#  Session（HTTP）
 session = requests.Session()
 session.headers.update({"User-Agent": "Mozilla/5.0"})
 
-#  リトライ
 def fetch_with_retry(url, retries=3):
     for attempt in range(retries):
         try:
@@ -49,7 +43,6 @@ def fetch_with_retry(url, retries=3):
                 time.sleep(0.5)
     return None
 
-#  URLチェック
 def check_url(row_idx, url, kw1_list, kw2_list, use_kw1, use_kw2):
     try:
         if not url:
@@ -59,7 +52,6 @@ def check_url(row_idx, url, kw1_list, kw2_list, use_kw1, use_kw2):
         if not url.startswith("http"):
             url = "https://" + url
 
-        # 負荷軽減
         time.sleep(0.1)
 
         response = fetch_with_retry(url)
@@ -73,7 +65,6 @@ def check_url(row_idx, url, kw1_list, kw2_list, use_kw1, use_kw2):
         hit1 = [kw for kw in kw1_list if kw.lower() in page_text]
         hit2 = [kw for kw in kw2_list if kw.lower() in page_text]
 
-        #  モード分岐
         if use_kw1 and use_kw2:
             if hit1 and hit2:
                 return (row_idx, ",".join(hit1 + hit2), "both")
@@ -103,7 +94,6 @@ def check_url(row_idx, url, kw1_list, kw2_list, use_kw1, use_kw2):
     except:
         return (row_idx, "取得失敗", "fail")
 
-#  実行
 if uploaded_file and st.session_state.run:
 
     kw1_list = [kw.strip() for kw in kw1_input.split("\n") if kw.strip()]
@@ -138,7 +128,6 @@ if uploaded_file and st.session_state.run:
             results[row_idx] = (result, status)
             progress.progress((i + 1) / len(futures))
 
-    # ✅ Excel書き込み＋色
     for row_idx, (result, status) in results.items():
         cell = ws[f"B{row_idx}"]
         cell.value = str(result)
@@ -154,7 +143,6 @@ if uploaded_file and st.session_state.run:
 
     st.success("チェック完了🚀")
 
-    #  サマリ
     display_data = []
     hit1_count = 0
     hit2_count = 0
@@ -193,7 +181,6 @@ if uploaded_file and st.session_state.run:
     st.write(f"❌ 取得失敗：{fail_count}件")
     st.write(f"📊 全体：{len(display_data)}件")
 
-    #  ダウンロード
     output_file = "result.xlsx"
     wb.save(output_file)
 
